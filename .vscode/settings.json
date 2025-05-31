@@ -1,0 +1,25 @@
+{
+  // 改行コードと末尾改行
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+
+  // 保存時に自動フォーマット（Prettier）
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  // clasp 設定（clasp.jsonを使っていれば不要）
+  "clasp.rootDir": "./",
+
+  // 保存時に自動 push（Run on Save が必要！）
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": ".*\\.(js|gs|html)$",
+        "cmd": "npx clasp push"
+      }
+    ]
+  }
+}
