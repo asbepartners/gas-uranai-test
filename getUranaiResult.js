@@ -4,19 +4,41 @@ function getUranaiResult(data) {
 
   // 五格を取得
   let gokaku;
+  // space除去
+  const cleanedLastName = data.lastName.replace(/\s/g, '').replace(/　/g, '');
+  const cleanedFirstName = data.firstName.replace(/\s/g, '').replace(/　/g, ''); 
+  console.log(`姓：${cleanedLastName}`);
+  console.log(`名：${cleanedFirstName}`);
   try {
-    // space除去
-    const cleanedLastName = data.lastName.replace(/\s/g, '').replace(/　/g, '');
-    const cleanedFirstName = data.firstName.replace(/\s/g, '').replace(/　/g, ''); 
-    console.log(`姓：${cleanedLastName}`);
-    console.log(`名：${cleanedFirstName}`);
+    Logger.log("🟡 try内：getGokaku呼び出し直前");
     gokaku = getGokaku(cleanedLastName, cleanedFirstName);
-
-    // → 画数がOKなら正常に五格が返ってくる
+    Logger.log("🟢 try内：getGokaku呼び出し成功");
+      // → 画数がOKなら正常に五格が返ってくる
   } catch (e) {
-    // → 未定義の漢字があればここに来る
-    console.error(e.message);
-    return { success: false, message: e.message };
+    Logger.log("catchに入るかtest");
+    Logger.log("🔥 エラーメッセージ:%s", e.message);
+    const msg = e.message;
+
+    if (msg.includes("の画数が定義されていません")) {
+      const match = msg.match(/「(.+?)」の画数が定義されていません/);
+      const kanji = match ? match[1] : null;
+
+      Logger.log("🔍 抽出された漢字: %s", kanji);
+
+      return {
+        success: false,
+        type: 'missingKanji',
+        message: msg,
+        kanji: kanji
+      };
+    } else {
+      return {
+        success: false,
+        type: 'unknownError',
+        message: msg,
+        kanji: null
+      };
+    }
   }
   console.log("gokaku:", gokaku);
 

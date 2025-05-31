@@ -33,7 +33,7 @@ function getGokaku(lastName, firstName) {
       console.log(`  → チェック中:「${char}」`);
       if (!(char in kakusuMap)) {
         console.log(`  ❌ 未定義の文字:「${char}」`);
-        recordMissingKakusuu(char); // ← ここで記録する
+        Logger.log("🔴 getGokaku内 throw直前：%s", char);
         throw new Error(`「${char}」の画数が定義されていません。`);
       }
       return sum + kakusuMap[char];
@@ -90,7 +90,8 @@ function getKakusuMap() {
 }
 
 // 未登録の漢字を画数辞書に追記する
-function recordMissingKakusuu(char) {
+function recordMissingKakusuu(char, strokes) {
+  Logger.log("recordmissingKakusu");
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("画数辞書");
   const data = sheet.getDataRange().getValues(); // すべてのデータ取得
 
@@ -99,7 +100,13 @@ function recordMissingKakusuu(char) {
   if (existingChars.includes(char)) return;
 
   // 未登録なら末尾に追記（初期値は0、手動フラグはTRUE）
-  sheet.appendRow([char, 0, true]); 
+  sheet.appendRow([char, strokes, true]); 
+
+  // 🔄 キャッシュクリア
+  CacheService.getScriptCache().remove("kakusuMap");
+
+  return true; // 成功通知
+
 }
 
 
