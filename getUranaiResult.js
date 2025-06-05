@@ -49,15 +49,45 @@ function getUranaiResult(data) {
   const day = parseInt(birthParts[2], 10);
 
   // 九星を取得
-  const kyuusei = getKyuusei(year, month, day);
+  const mainStar = getMainStar(year, month, day);
+
+  // 週間の中宮九星リストを取得
+  // 今週の月曜日を取得
+  const getMondayOfCurrentWeek = () => {
+    const today = new Date();
+    const monday = new Date(today);
+    const day = today.getDay(); // 0=日曜, 1=月曜, ...
+    const diff = (day === 0) ? -6 : 1 - day; // 日曜なら前の月曜を基準に
+    monday.setDate(today.getDate() + diff);
+    return monday;
+  };
+  const weeklyChugyuList = getWeeklyChugyuList(mainStar, getMondayOfCurrentWeek());
+
+  // 人格から性格のキーワード取得
+  const personality = personalityMap[gokaku["人格"]] || {
+    type: '不明タイプ',
+    strengths: '',
+    weaknesses: '',
+    keywords: ''
+  };
 
   // 占いプロンプトを取得
-  const prompt = getUranaiPrompt(data,fullName,gokaku,kyuusei);
-
+  const promptInput = {
+    fullName: data.lastName + " " + data.firstName,
+    birth: data.birth,
+    gender: data.gender,
+    gokaku,
+    mainStar,
+    weeklyChugyuList,
+    personality
+  };
+  console.log("🐾 getUranaiPrompt に渡すデータ:", JSON.stringify(promptInput, null, 2));
+  const prompt = getUranaiPrompt(promptInput);
+  console.log("📝 生成されたプロンプト内容:", prompt);
 
   const payload = {
-    // model: 'gpt-4',
-    model: 'gpt-3.5-turbo',
+    model: 'gpt-4o',
+    // model: 'gpt-3.5-turbo',
     messages: [
       { role: 'system', content: 'あなたはプロの占い師です。' },
       { role: 'user', content: prompt }

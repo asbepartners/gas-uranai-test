@@ -17,73 +17,31 @@
     <!-- Bootstrap JS（モーダルなどに必要）-->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+    <!-- ライブラリ読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- CSS読み込み -->
+    <?!= HtmlService.createHtmlOutputFromFile('style').getContent(); ?>
+
+
     <!-- flatpickr 初期化 -->
     <script>
       document.addEventListener("DOMContentLoaded", function () {
-        <!-- flatpickr.localize(flatpickr.l10ns.ja); -->
-        flatpickr.localize(flatpickr.l10ns.ja);
+        // flatpickr の日本語ローカライズを有効化したい場合は以下を有効に
+        // flatpickr.localize(flatpickr.l10ns.ja);
+
+        // カレンダーを初期表示で 2000年1月1日にジャンプさせる例
         flatpickr("#birth", {
           dateFormat: "Y-m-d",
-          maxDate: "today"
+          maxDate: "today",
+          onReady: function (selectedDates, dateStr, fp) {
+            fp.currentYear = 2000;
+            fp.currentMonth = 0; // 0 が 1月
+            fp.jumpToDate(new Date(2000, 0, 1));
+          }
         });
-      });
+  });
     </script>
-
-    <style>
-      body {
-        background: #f5f2fa;
-        font-family: "Helvetica Neue", sans-serif;
-        margin: 0;
-        padding: 0;
-      }
-      .container {
-        max-width: 640px;
-        background: #ffffff;
-        padding: 2rem;
-        margin: 2rem auto;
-        border-radius: 1rem;
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-      }
-      h2 {
-        font-weight: bold;
-        color: #5c4b8a;
-        font-size: 1.8rem;
-        text-align: center;
-      }
-      .form-label {
-        font-weight: 500;
-        font-size: 1rem;
-      }
-      .form-control,
-      .form-select {
-        font-size: 1.1rem;
-        padding: 0.75rem 1rem;
-        border-radius: 0.5rem;
-      }
-      .btn-purple {
-        background-color: #9b59b6;
-        border: none;
-        color: white;
-        font-size: 1.2rem;
-        padding: 0.9rem;
-        border-radius: 0.5rem;
-      }
-      .btn-purple:hover {
-        background-color: #8e44ad;
-        color: #ffe8b5;
-      }
-      #result {
-        white-space: pre-wrap;
-        min-height: 4em;
-        font-size: 1rem;
-      }
-      .alert-custom {
-        background: #fdf8f3;
-        border-radius: 0.75rem;
-        border: 1px solid #e6ddd5;
-        padding: 1.25rem;
-      }
-    </style>
   </head>
 
   <body>
@@ -117,6 +75,10 @@
       <button onclick="runUranai()" class="btn btn-purple w-100">診断スタート</button>
 
       <div id="result" class="mt-4 alert alert-custom"></div>
+
+      <!-- 診断結果エリアの直下にPDFボタン追加（初期は非表示） -->
+      <button id="downloadPdfBtn" class="btn btn-outline-secondary mt-3 d-none">📄 結果をPDFで保存</button>
+
     </div>
 
     <!-- 占いロジック -->
@@ -150,7 +112,6 @@
           birth,
           gender
         }
-
         google.script.run
           .withSuccessHandler(function (response) {
             console.log("🔍 response:", response);
@@ -166,7 +127,34 @@
                 resultBox.innerText = `⚠️ ${response.message}`;
               }
             } else {
-              resultBox.innerText = response;
+              // resultBox.innerText = response;
+              const resultBox = document.getElementById("result");
+              resultBox.innerHTML = ""; // いったんクリア
+              const sections = response.split(/【(.+?)】/g);
+
+              for (let i = 1; i < sections.length; i += 2) {
+                const title = sections[i];
+                const content = sections[i + 1];
+
+                const sectionDiv = document.createElement("div");
+                sectionDiv.classList.add("mb-4");
+
+                const heading = document.createElement("h4");
+                heading.textContent = `🔹 ${title}`;
+                heading.classList.add("fw-bold");
+
+                const body = document.createElement("p");
+                body.textContent = content.trim();
+                body.classList.add("text-muted");
+
+                sectionDiv.appendChild(heading);
+                sectionDiv.appendChild(body);
+
+                resultBox.appendChild(sectionDiv);
+              }
+
+              // 診断後にPDFボタン表示(一旦封印)
+              // document.getElementById("downloadPdfBtn").classList.remove("d-none");
             }
           })
           .withFailureHandler(function (error) {
@@ -226,5 +214,53 @@
         </div>
       </div>
     </div>
+    <!-- PDF処理　コメントアウト！（PDF処理はうまくいかないので封印）
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const pdfBtn = document.getElementById("downloadPdfBtn");
+        if (pdfBtn) {
+          pdfBtn.addEventListener("click", () => {
+            const resultContent = document.getElementById("result");
+
+            // PDF用に一時的にスタイルを変更
+            const originalFontSize = resultContent.style.fontSize;
+            const originalPadding = resultContent.style.padding;
+            resultContent.style.fontSize = "0.95rem";
+            resultContent.style.padding = "8px";
+
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const fileName = `${yyyy}-${mm}-${dd}_uranai.pdf`;
+
+            const opt = {
+              margin: 5, // 余白を5mmに
+              filename: fileName,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 1.0, useCORS: true }, // スケールを1.0に
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait'},
+              pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+            html2pdf()
+              .set(opt)
+              .from(resultContent)
+              .save()
+              .then(() => {
+                resultContent.style.fontSize = originalFontSize;
+                resultContent.style.padding = originalPadding;
+                alert("🔮 PDFを保存しました！");
+              })
+              .catch((err) => {
+                resultContent.style.fontSize = originalFontSize;
+                resultContent.style.padding = originalPadding;
+                console.error("PDF作成エラー:", err);
+                alert("保存に失敗しました💦 もう一度お試しください。");
+              });
+          });
+        }
+      });
+    </script>
+   -->
   </body>
 </html>

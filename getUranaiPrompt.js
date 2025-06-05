@@ -1,48 +1,60 @@
-// getUranaiPrompt.gs
-function getUranaiPrompt(data, fullName, gokaku, kyuusei) {
-  const now = new Date();
-  const currentMonth = now.getMonth() + 1; // JSでは0月始まりなので+1
-
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - now.getDay() + 1); // 週の開始（月曜）
-  const weekEnd = new Date(now);
-  weekEnd.setDate(now.getDate() - now.getDay() + 7); // 週の終了（日曜）
-
-  const formatDate = (date) =>
-    `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+function getUranaiPrompt({ fullName, birth, gender, gokaku, mainStar, weeklyChugyuList, personality }) {
+  const start = Utilities.formatDate(new Date(weeklyChugyuList[0].date), 'Asia/Tokyo', 'yyyy年M月d日');
+  const end = Utilities.formatDate(new Date(weeklyChugyuList.at(-1).date), 'Asia/Tokyo', 'M月d日');
 
   return `
 
-あなたはプロの占い師です。
-以下の情報をもとに、優しくわかりやすい口調で、簡潔に占い結果をまとめてください。
+以下の情報をもとに、週運占いの結果を日本語で800〜1000文字程度で作成してください。
 
-【名前】${fullName}
-【生年月日】${data.birth}
-【性別】${data.gender}
+【入力データ】
+・名前：${fullName}
+・性格タイプ（人格から）：${personality.type}
+・性格キーワード：${personality.keywords}
+・強み：${personality.strengths}
+・弱み：${personality.weaknesses}
+・姓名判断（五格）：
+  天格：${gokaku["天格"]}
+  人格：${gokaku["人格"]}
+  地格：${gokaku["地格"]}
+  外格：${gokaku["外格"]}
+  総格：${gokaku["総格"]}
+・主星（九星）：${mainStar}
+・週運データ（毎日の中宮と関係）：
+${JSON.stringify(weeklyChugyuList, null, 2)}
 
-【五格（姓名判断）】
-天格：${gokaku.天格}
-人格：${gokaku.人格}
-地格：${gokaku.地格}
-外格：${gokaku.外格}
-総格：${gokaku.総格}
-※もっとも良い格を中心に、性格傾向を読み解いてください。
+【出力フォーマット】
+【週運占い：${start}〜${end}】
 
-【九星（生年月日による）】
-${kyuusei}
+■ 性格・行動傾向（約300文字）  
+姓名判断の五格（特に人格・総格）と、性格キーワード、主星（四緑木星）の特徴を組み合わせて、あなたの性格と行動傾向を具体的に説明してください。
 
-▼出力してほしい内容（全体で400〜600文字以内）
-1. あなたはどんな人？（性格や行動傾向を中心に）
-五格の各数字と、九星を先に提示して、そのあとどんな人なのか記載してください。
-※九星気学では「一白水星」「四緑木星」などがあり、それぞれ人の性格や行動傾向、運気の流れに関係しています。
-できるだけ根拠も合わせて紹介して
-2. 今週（${formatDate(weekStart)}〜${formatDate(weekEnd)}）の運気とアドバイス
-- 良い流れに乗るための行動や気をつけると良いこと
-- 注意点（トラブル回避や失敗しやすい場面）
-- ラッキーアイテムやおすすめ行動があれば合わせて提示
-3. 最後に一言メッセージ（やさしく）
+■ 今週のテーマ（約100〜150文字）  
+この1週間の流れや注意点、心がけたいことを、中宮とあなたの性格タイプに基づいてまとめてください。
 
-※今週末までを意識して、前向きだけど現実的なアドバイスを。ブレない軸を持ちつつ、優しい言葉でお願いします。
-※ブレない軸を持ちつつ、前向きで受け入れやすい表現でお願いします。
-  `;
+■ 日別アドバイス（1日50文字以内）  
+6/2（月）：  
+6/3（火）：  
+6/4（水）：  
+6/5（木）：  
+6/6（金）：  
+6/7（土）：  
+6/8（日）：
+
+■ 今週のラッキーアクション  
+ラッキーカラー：○○  
+ラッキーアイテム：○○  
+意識したいこと：○○（40〜60文字）
+
+■ 今週のひとことメッセージ（50〜80文字）  
+ポジティブで前向きな言葉で締めくくってください。
+
+この情報をすべて統合して、読みやすく自然な日本語で800〜1000字でまとめてください。
+出力は指定フォーマットに従い、見出しごとに整えてください。
+
+【重要な注意点】
+- 出力構成と順序は必ず守ってください。
+- 各セクションの見出しは必ず表示してください。
+- 「相剋」「比和」などの専門用語は、わかりやすい言葉に置き換えて説明してください。
+- 性格と運勢の関係性を具体的に表現してください（例：「持続力に欠けるあなたにとって…」）。
+`;
 }
