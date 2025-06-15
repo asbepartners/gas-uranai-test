@@ -71,55 +71,51 @@ function getUranaiResult(data) {
     keywords: ''
   };
 
-  // 占いプロンプトを取得
-  const promptInput = {
-    fullName: data.lastName + " " + data.firstName,
-    birth: data.birth,
-    gender: data.gender,
+  // 性格診断
+  const seikakuPrompt = getSeikakuPrompt({
+    fullName,
     gokaku,
     mainStar,
+    personality,
+  });
+  console.log("seikakuPrompt=%s",seikakuPrompt);
+  const seikakuResult = callOpenAI(seikakuPrompt);
+
+
+  // 週占い
+  const weeklyPrompt = makeWeeklyPromptFromSeikaku({
+    fullName,
+    gokaku,
+    mainStar,
+    personality,
     weeklyChugyuList,
-    personality
-  };
-  console.log("🐾 getUranaiPrompt に渡すデータ:", JSON.stringify(promptInput, null, 2));
-  const prompt = getUranaiPrompt(promptInput);
-  console.log("📝 生成されたプロンプト内容:", prompt);
-
-  const payload = {
-    model: 'gpt-4o',
-    // model: 'gpt-3.5-turbo',
-    messages: [
-      { role: 'system', content: 'あなたはプロの占い師です。' },
-      { role: 'user', content: prompt }
-    ],
-    temperature: 0.4
-  };
-
-  const options = {
-    method: 'post',
-    contentType: 'application/json',
-    headers: {
-      Authorization: 'Bearer ' + OPENAI_API_KEY
-    },
-    payload: JSON.stringify(payload)
-  };
-
-  const response = UrlFetchApp.fetch('https://api.openai.com/v1/chat/completions', options);
-  const result = JSON.parse(response.getContentText());
-  const resultText = result.choices[0].message.content;
+  });
+  console.log("weeklyPrompt=%s",weeklyPrompt);
+  const weeklyResult = callOpenAI(weeklyPrompt);
 
   // ✅ ここで保存！
-  const ss = SpreadsheetApp.openById('1Ait1DQmAWoAFV_MwBGDRg36_iIoLtUj77916KhHrlsM');
-  const sheet = ss.getSheetByName('占い記録'); 
-  if (!sheet) throw new Error('シート「占い記録」が見つかりません');
+  const ss = SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID"));
+  const sheet = ss.getSheetByName('総合占い'); 
+  if (!sheet) throw new Error('シート「総合占い」が見つかりません');
   sheet.appendRow([
     new Date(),          // 実行時刻
     data.lastName,
     data.firstName,
     data.birth,
     data.gender,
-    resultText
+    gokaku.天格,
+    gokaku.人格,
+    gokaku.地格,
+    gokaku.外格,
+    gokaku.総格,
+    mainStar,
+    personality.type,
+    personality.keywords,
+    personality.strengths,
+    personality.weaknesses,
+    seikakuResult,
+    weeklyResult
   ]);
 
-  return resultText;
+  return seikakuResult + "\n\n" + weeklyResult;
 }

@@ -72,7 +72,22 @@
         </select>
       </div>
 
-      <button onclick="runUranai()" class="btn btn-purple w-100">診断スタート</button>
+      <form id="uranai-form">
+        <!-- 同意チェック -->
+        <div class="form-check">
+          <input type="checkbox" class="form-check-input" id="consent-check">
+          <label class="form-check-label" for="consent-check">
+            <a href="https://50blog.org/lp/fortune-privacy/" target="_blank">個人情報の取り扱いについて</a>に同意します
+          </label>
+        </div>
+
+        <!-- 診断スタートボタン -->
+        <div style="text-align: center;">
+          <button type="submit" id="start-btn" class="btn btn-primary mt-3" disabled>
+            診断をスタートする
+          </button>
+        </div>
+      </form>
 
       <div id="result" class="mt-4 alert alert-custom"></div>
 
@@ -80,6 +95,27 @@
       <button id="downloadPdfBtn" class="btn btn-outline-secondary mt-3 d-none">📄 結果をPDFで保存</button>
 
     </div>
+
+    <!-- 同意ボタンの制御 -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const checkbox = document.getElementById("consent-check");
+        const startBtn = document.getElementById("start-btn");
+        const form = document.getElementById("uranai-form");
+
+        // ✅ 同意チェックでボタン有効化
+        checkbox.addEventListener("change", function () {
+          startBtn.disabled = !checkbox.checked;
+        });
+
+        // ✅ 診断スタート処理を実行（runUranai呼び出し）
+        form.addEventListener("submit", function (e) {
+          e.preventDefault(); // ← これでリロード防止
+
+          runUranai(); // ← これが重要！
+        });
+      });
+    </script>
 
     <!-- 占いロジック -->
     <script>

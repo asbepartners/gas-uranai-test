@@ -54,6 +54,12 @@
     border: 1px solid #e6ddd5;
     padding: 1.25rem;
   }
+  button:disabled {
+    background-color: #ccc !important; /* 薄いグレー */
+    border-color: #ccc !important;
+    color: #666; /* 文字色も少し薄く */
+    cursor: not-allowed;
+  }
   @media print {
     @page {
       margin: 0;

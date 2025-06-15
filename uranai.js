@@ -205,6 +205,43 @@ function getRelation(mainStar, chugyuStar) {
 }
 
 
+/**
+ * 性格診断をもとに週運占いを生成する
+ * @param {string} seikaku - 性格診断結果のテキスト
+ * @return {string} - 週運占いの結果
+ */
+function generateShuUnFromSeikaku(seikaku) {
+  const prompt = makeWeeklyPromptFromSeikaku(seikaku);
+  const result = callOpenAI(prompt); // これは内部でAPI呼び出し
+  return result;
+}
 
+/**
+ * オープンAI呼び出し処理（共通関数）
+ */
+function callOpenAI(promptText) {
+  const apiKey = PropertiesService.getScriptProperties().getProperty("OPENAI_API_KEY");
+  const url = "https://api.openai.com/v1/chat/completions";
+  const payload = {
+    model: "gpt-4o",
+    messages: [
+      { role: 'system', content: 'あなたはプロの占い師です。' },
+      { role: 'user', content: promptText }
+    ],
+    temperature: 0.7,
+  };
+
+  const options = {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify(payload),
+    headers: { Authorization: `Bearer ${apiKey}` },
+    muteHttpExceptions: true,
+  };
+
+  const response = UrlFetchApp.fetch(url, options);
+  const json = JSON.parse(response.getContentText());
+  return json.choices[0].message.content.trim();
+}
 
 
